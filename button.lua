@@ -50,8 +50,8 @@ function Button:onDraw()
       cr:setLineWidth(1)
       local pat = cairo.LinearGradientPattern(0, 0, 0, h)
       if self.flags.hover then
-         pat:addColorStopRGB(0, 132/255, 197/255, 253/255)
-         pat:addColorStopRGB(1, 118/255, 183/255, 236/255)
+         pat:addColorStopRGB(0, 0.5, 0.8, 1)
+         pat:addColorStopRGB(1, 0.5, 0.7, 0.9)
       else
          pat:addColorStopRGB(1, 0.8, 0.8, 0.8)
          pat:addColorStopRGB(0, 0.7, 0.7, 0.7)

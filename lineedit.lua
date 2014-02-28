@@ -90,7 +90,7 @@ function LineEdit:onDraw()
       cr:moveTo(padding+textpadding+cx+self.__shift, math.floor(padding+textpadding/2))
       cr:lineTo(padding+textpadding+cx+self.__shift, math.floor(h-padding-textpadding/2))
       cr:setLineWidth(1)
-      cr:setSourceRGBA(0, 0, 0, 0.5)
+      cr:setSourceRGBA(0.2, 0.4, 0.6, 0.9)
       cr:stroke()
 
       cr:restore()
