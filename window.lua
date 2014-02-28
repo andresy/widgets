@@ -12,7 +12,10 @@ Window.__init =
     {name="attr", type="table", opt=true}},
    function(self, parent, attr)
       self.window = self
-      self:__initAttributes({width=0, height=0, fullscreen=false, title="", resizable=false, color={r=0.9, g=0.9, b=0.9}})
+      self.children = {}
+      self.drv = {}
+      self.flags = {nochild=false, onechild=true, hidden=false, undersized=false, dirty=false, updategeometry=false} -- DEBUG
+      self:__initAttributes({fullscreen=false, title="", resizable=false, color={r=0.9, g=0.9, b=0.9}})
       self:setAttributes({title=title})
       if attr then
          self:setAttributes(attr)
@@ -20,7 +23,7 @@ Window.__init =
    end
 )
 
-Window.setGeometry =
+Window.onSetGeometry =
    argcheck(
    {{name="self", type="gui.Widget"},
     {name="x", type="number"},
@@ -28,82 +31,84 @@ Window.setGeometry =
     {name="w", type="number"},
     {name="h", type="number"}},
    function(self, x, y, w, h)
-      Widget.setGeometry(self, x, y, w, h)
-      if x >= 0 and y >= 0 and self.__win then
-         sdl.setWindowPosition(self.__win, x, y)
+      if x >= 0 and y >= 0 and self.drv.window then
+         sdl.setWindowPosition(self.drv.window, x, y)
       end
-      self.attr.width=w
-      self.attr.height=h
-      self:updateGeometry()
+      if self.children[1] then
+         self.children[1]:setGeometry(0, 0, w, h)
+      end
    end
 )
 
-Window.draw =
+function Window:sizeRequest()
+   if self.attr.resizable and self.w and self.h then
+      return self.w, self.h
+   else
+      if self.children[1] then
+         return self.children[1]:sizeRequest()
+      else
+         return 0, 0
+      end
+   end
+end
+
+Window.onDraw =
    argcheck(
    {{name="self", type="gui.Window"}},
    function(self)
-      if self.__updategeometry and self.child then
-         if not self.__win then
+      print('geometry update?', self.flags.updategeometry)
+      if self.flags.updategeometry then
+
+         if not self.drv.window then
             local imgsurf = cairo.ImageSurface("rgb24", 800, 600) -- dummy
-            self.cr = cairo.Context(imgsurf)
+            self.drv.cr = cairo.Context(imgsurf)
          end
 
-         local w, h
-         if self.attr.width > 0 and self.attr.height > 0 then
-            w, h = self.attr.width, self.attr.height
-         else
-            w, h = self.child:wishSize()
-         end
+         local w, h = self:sizeRequest()
 
-         if self.__win then
-            sdl.setWindowSize(self.__win, w, h)
-         else
-            local flags = 0
-            if self.attr.fullscreen then
-               flags = bit.bor(flags, sdl.WINDOW_FULLSCREEN)
-            end
-            if self.attr.resizable then
-               flags = bit.bor(flags, sdl.WINDOW_RESIZABLE)
-            end
-            self.__win = sdl.createWindow(self.attr.title, sdl.WINDOWPOS_CENTERED, sdl.WINDOWPOS_CENTERED, w, h, flags)
-         end
-
-         local surf = sdl.getWindowSurface(self.__win)
-         local cairosurf = cairo.ImageSurface(surf.pixels,
-                                              "rgb24",
-                                              w,
-                                              h,
-                                              surf.pitch)
-
-         self.cr = cairo.Context(cairosurf)
-
-         self.child:setGeometry(0, 0, w, h)
-
-         self.__x = 0
-         self.__y = 0
-         self.__w = w
-         self.__h = h
-         self.__updategeometry = false
+         self:setGeometry(-1, -1, w, h)
       end
 
       local color = self.attr.color
-      self.cr:setSourceRGB(color.r, color.g, color.b)
-      self.cr:rectangle(0, 0, self.__w, self.__h)
-      self.cr:fill()
-
-      self.child:draw()
-
-      if self.__win then
-         sdl.updateWindowSurface(self.__win)
-      end
+      self.drv.cr:setSourceRGB(color.r, color.g, color.b)
+      self.drv.cr:rectangle(0, 0, self.w, self.h)
+      self.drv.cr:fill()
    end
 )
+
+function Window:setGeometry(x, y, w, h)
+   if self.drv.window then
+      sdl.setWindowSize(self.drv.window, w, h)
+   else
+      local flags = 0
+      if self.attr.fullscreen then
+         flags = bit.bor(flags, sdl.WINDOW_FULLSCREEN)
+      end
+      if self.attr.resizable then
+         flags = bit.bor(flags, sdl.WINDOW_RESIZABLE)
+      end
+      self.drv.window = sdl.createWindow(self.attr.title, sdl.WINDOWPOS_CENTERED, sdl.WINDOWPOS_CENTERED, w, h, flags)
+   end
+
+   local surf = sdl.getWindowSurface(self.drv.window)
+   local cairosurf = cairo.ImageSurface(surf.pixels,
+                                        "rgb24",
+                                        w,
+                                        h,
+                                        surf.pitch)
+
+   self.drv.cr = cairo.Context(cairosurf)
+
+   Widget.setGeometry(self, x, y, w, h)
+   self.flags.updategeometry = false
+end
 
 Window.updateGeometry =
    argcheck(
    {{name="self", type="gui.Window"}},
    function(self)
-      self.__updategeometry = true
+      self.flags.updategeometry = true
+      self:redraw()
    end
 )
 
@@ -111,8 +116,12 @@ Window.isGeometryReady =
    argcheck(
    {{name="self", type="gui.Window"}},
    function(self)
-      return (not self.__updategeometry)
+      return (not self.flags.updategeometry)
    end
 )
+
+function Window:redraw()
+   self.flags.dirty = true
+end
 
 return Window

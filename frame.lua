@@ -13,7 +13,6 @@ Frame.__init =
    function(self, parent, label, attr)
       Widget.__init(self,
                     parent,
-                    false,
                     {hfill=false, vfill=false, label="Une Grosse Boite", padding=10, halign='center', valign='center'},
                     attr)
    end
@@ -26,18 +25,18 @@ function Frame:setLabel(label)
    end
 end
 
-function Frame:wishSize()
-   local cr = self.window.cr
+function Frame:sizeRequest()
+   local cr = self.window.drv.cr
    local w, h = 0, 0
-   if self.child then
-      w, h = self.child:wishSize()
+   if self.children[1] then
+      w, h = self.children[1]:sizeRequest()
    end
    w = w + self.attr.padding*4
    h = h + self.attr.padding*4
    return w, h
 end
 
-Frame.setGeometry =
+Frame.onSetGeometry =
    argcheck(
    {{name="self", type="gui.Frame"},
     {name="x", type="number"},
@@ -45,21 +44,19 @@ Frame.setGeometry =
     {name="w", type="number", opt=true},
     {name="h", type="number", opt=true}},
    function(self, x, y, w, h)
-      Widget.setGeometry(self, x, y, w, h)
-
-      if self.child then
+      if self.children[1] then
          local padding = self.attr.padding
-         local rw, rh = self:wishSize()
+         local rw, rh = self:sizeRequest()
          local wleft = math.max(0, w-rw)
          local hleft = math.max(0, h-rh)
-         rw, rh = self.child:wishSize()
+         rw, rh = self.children[1]:sizeRequest()
          
-         if wleft > 0 and self.child.attr.hfill then
+         if wleft > 0 and self.children[1].attr.hfill then
             rw = rw+wleft
             wleft = 0
          end
          
-         if hleft > 0 and self.child.attr.hfill then
+         if hleft > 0 and self.children[1].attr.hfill then
             rh = rh+hleft
             hleft = 0
          end
@@ -84,21 +81,21 @@ Frame.setGeometry =
             error(string.format('%s: invalid align attribute value <%s> (valid are: center, top, bottom)', class.type(self), self.attr.align))
          end
 
-         self.child:setGeometry(rx, ry, rw, rh)
+         self.children[1]:setGeometry(rx, ry, rw, rh)
       end
    end
 )
 
-function Frame:draw()
-   local cr = self.window.cr
-   if self.__w > 0 and self.__h > 0 then
-      local w, h = self:wishSize()
-      w = math.max(self.__w, w)
-      h = math.max(self.__h, h)
+function Frame:onDraw()
+   local cr = self.window.drv.cr
+   if self.w > 0 and self.h > 0 then
+      local w, h = self:sizeRequest()
+      w = math.max(self.w, w)
+      h = math.max(self.h, h)
 
       cr:save()
-      cr:translate(self.__x, self.__y)
-      cr:rectangle(0, 0, self.__w, self.__h)
+      cr:translate(self.x, self.y)
+      cr:rectangle(0, 0, self.w, self.h)
       cr:clip()
 
       local padding = self.attr.padding
@@ -126,16 +123,6 @@ function Frame:draw()
       end
 
       cr:restore()
-   end
-   Widget.draw(self)
-end
-
-function Frame:__onMouseMotion(x, y)
-   Widget.__onMouseMotion(self, x, y)
-   if self:__isHover(x, y) then
-      self.__hover = true
-   else
-      self.__hover = false
    end
 end
 

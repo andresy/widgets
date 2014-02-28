@@ -28,30 +28,33 @@ local frame = Frame.new(vertical, {hfill=true})
 local h1 = HBox.new(frame, {hfill=true, vfill=true}) -- faudrait pas tout mettre comme ca?
 for i=1,5 do
    local button = Button.new(h1, 'pouic' .. i, {hfill=true})
-   function button:onMouseButton()
+   function button:onButtonPressed()
       print('CLICKED pouic' .. i)
    end
 end
-h1.children[3].onMouseButton = function(self)
+h1.children[3].onButtonPressed = function(self)
                                   self:setLabel('CLICKED')
 --                                  Button.new(h1, 'pouic')
                                end
 
-h1.children[3].onMouseMotion = function(self, x, y)
-                                  if self:__isHover(x, y) then
-                                     self:setLabel('HOVERED')
-                                  else
+h1.children[3].onButtonHovered = function(self)
+                                    self:setLabel('HOVERED')
+                                 end
+
+h1.children[3].onButtonUnHovered = function(self)
                                      self:setLabel('YOU LEFT, BASTERD')
                                   end
-                             end
 
 local h2 = HBox.new(vertical, {hfill=true, vfill=true}) -- faudrait pas tout mettre comme ca?
 Label.new(h2, 'Choose your destiny:')
 for i=1,3 do
    Button.new(h2, 'pouix' .. i, {hfill=true})
 end
-h2.children[3].onMouseButton = function()
-                                  Button.new(h2, 'pouix')
+local idx = 3
+h2.children[3].onButtonPressed = function()
+                                  print('creating button!')
+                                  idx = idx + 1
+                                  Button.new(h2, 'pouix' .. idx)
                                end
 
 local vc = VBox.new(h2, {align='left', spacing=0})
@@ -78,7 +81,7 @@ while true do
       break
    elseif event.type == sdl.TEXTINPUT then
       local txt = ffi.string(event.text.text)
-      window:__onTextInput(txt)
+      window:textInput(txt)
    elseif event.type == sdl.KEYDOWN then
       local name = ffi.string(sdl.getKeyName( event.key.keysym.sym ))
       local mod = {}
@@ -120,12 +123,12 @@ while true do
 
       mod = table.concat(mod)
       print('KEY', name, mod)
-      window:__onKeyPressed(name, mod)
+      window:keyPressed(name, mod)
 
    elseif event.type == sdl.MOUSEMOTION then
-      window:__onMouseMotion(event.motion.x, event.motion.y)
+      window:mouseMotion(event.motion.x, event.motion.y)
    elseif event.type == sdl.MOUSEBUTTONDOWN then
-      window:__onMouseButton(event.button.x, event.button.y)
+      window:mouseButton(event.button.x, event.button.y)
    elseif event.type == sdl.WINDOWEVENT then
       if event.window.event == sdl.WINDOWEVENT_RESIZED then
          W = event.window.data1
@@ -134,6 +137,6 @@ while true do
       end
    end
 
-   sdl.updateWindowSurface(win)
+   sdl.updateWindowSurface(window.drv.window)
 
 end

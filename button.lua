@@ -13,9 +13,10 @@ Button.__init =
    function(self, parent, label, attr)
       Widget.__init(self,
                     parent,
-                    false,
                     {hfill=false, vfill=false, label=label, padding=10},
                     attr)
+      self.flags.hover = false
+      self.flags.pressed = false
    end
 )
 
@@ -26,29 +27,29 @@ function Button:setLabel(label)
    end
 end
 
-function Button:wishSize()
-   local cr = self.window.cr
+function Button:sizeRequest()
+   local cr = self.window.drv.cr
    cr:setFontSize(self.attr.fontsize)
    local w = cr:textExtents(self.attr.label).width + 2*self.attr.padding
    local h = cr:fontExtents().height + 2*self.attr.padding
    return w, h
 end
    
-function Button:draw()
-   local cr = self.window.cr
-   if self.__w > 0 and self.__h > 0 then
-      local w, h = self:wishSize()
-      w = math.max(self.__w, w)
-      h = math.max(self.__h, h)
+function Button:onDraw()
+   local cr = self.window.drv.cr
+   if self.w > 0 and self.h > 0 then
+      local w, h = self:sizeRequest()
+      w = math.max(self.w, w)
+      h = math.max(self.h, h)
 
       cr:save()
-      cr:translate(self.__x, self.__y)
-      cr:rectangle(0, 0, self.__w, self.__h)
+      cr:translate(self.x, self.y)
+      cr:rectangle(0, 0, self.w, self.h)
       cr:clip()
       
       cr:setLineWidth(1)
       local pat = cairo.LinearGradientPattern(0, 0, 0, h)
-      if self.__hover then
+      if self.flags.hover then
          pat:addColorStopRGB(0, 132/255, 197/255, 253/255)
          pat:addColorStopRGB(1, 118/255, 183/255, 236/255)
       else
@@ -73,12 +74,37 @@ function Button:draw()
    end
 end
 
-function Button:__onMouseMotion(x, y)
-   Widget.__onMouseMotion(self, x, y)
-   if self:__isHover(x, y) then
-      self.__hover = true
+function Button:onButtonHovered()
+end
+
+function Button:onButtonUnHovered()
+end
+
+function Button:onMouseMotion(x, y)
+   local hover = self.flags.hover
+   if self:isArea(x, y) then
+      if not hover then
+         self.flags.hover = true
+         self:onButtonHovered()
+         self:redraw()
+      end
    else
-      self.__hover = false
+      if hover then
+         self.flags.hover = false
+         self:onButtonUnHovered()
+         self:redraw()
+      end
+   end
+end
+
+function Button:onButtonPressed()
+end
+
+function Button:onMouseButton(x, y)
+   if self:isArea(x, y) then
+      self:onButtonPressed()
+   elseif self.flags.pressed then
+      self.flags.pressed = false
    end
 end
 

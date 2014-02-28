@@ -16,7 +16,6 @@ LineEdit.__init =
    function(self, parent, text, attr)
       Widget.__init(self,
                     parent,
-                    false,
                     {hfill=false, vfill=false, text=text, padding=10, textpadding=5, size=20},
                     attr)
 
@@ -32,8 +31,8 @@ function LineEdit:setText(text)
    end
 end
 
-function LineEdit:wishSize()
-   local cr = self.window.cr
+function LineEdit:sizeRequest()
+   local cr = self.window.drv.cr
 --   cr:selectFontFace('monospace', 'normal', 'normal')
    cr:setFontSize(self.attr.fontsize)
    local w = cr:textExtents(string.rep('X', self.attr.size)).width + 2*self.attr.padding + 2*self.attr.textpadding
@@ -41,21 +40,21 @@ function LineEdit:wishSize()
    return w, h
 end
    
-function LineEdit:draw()
-   local cr = self.window.cr
-   if self.__w > 0 and self.__h > 0 then
+function LineEdit:onDraw()
+   local cr = self.window.drv.cr
+   if self.w > 0 and self.h > 0 then
       local padding = self.attr.padding
       local textpadding = self.attr.textpadding
-      local w, h = self:wishSize()
+      local w, h = self:sizeRequest()
       local text = self.attr.text
       local idx = self.__idx
 
-      w = math.max(self.__w, w)
-      h = math.max(self.__h, h)
+      w = math.max(self.w, w)
+      h = math.max(self.h, h)
 
       cr:save()
-      cr:translate(self.__x, self.__y)
-      cr:rectangle(0, 0, self.__w, self.__h)
+      cr:translate(self.x, self.y)
+      cr:rectangle(0, 0, self.w, self.h)
       cr:clip()
       
       cr:rectangle(padding, padding, w-padding*2, h-padding*2)
@@ -98,14 +97,15 @@ function LineEdit:draw()
    end
 end
 
-function LineEdit:__onTextInput(str)
+function LineEdit:onTextInput(str)
    local text = self.attr.text
    local idx = self.__idx
    self.attr.text = utf8.sub(text, 1, idx) .. str .. utf8.sub(text, idx+1, utf8.len(text))
    self.__idx = self.__idx + utf8.len(str)
+   self:redraw()
 end
 
-function LineEdit:__onKeyPressed(key, mod)
+function LineEdit:onKeyPressed(key, mod)
    local text = self.attr.text
    local idx = self.__idx
    local len = utf8.len(text)
@@ -113,31 +113,38 @@ function LineEdit:__onKeyPressed(key, mod)
       if idx >= 1 then
          self.attr.text = utf8.sub(text, 1, idx-1) .. utf8.sub(text, idx+1, len)
          self.__idx = idx-1
+         self:redraw()
       end
    elseif key == 'Left' then
       if idx >= 1 then
          self.__idx = idx-1
+         self:redraw()
       end
    elseif key == 'Right' then
       if idx < len then
          self.__idx = idx+1
+         self:redraw()
       end
    elseif key == 'Return' then
       if self.onReturn then
          self:onReturn()
+         self:redraw()
       end
    elseif key == 'Delete' then
       if idx+1 >= 1 and idx < len then
          self.attr.text = utf8.sub(text, 1, idx) .. utf8.sub(text, idx+2, len)
+         self:redraw()
       end
    elseif key == 'Home' then
       self.__idx = 0
+      self:redraw()
    elseif key == 'End' then
       self.__idx = len
+      self:redraw()
    elseif key == 'V' and mod:match('g') then
       if sdl.hasClipboardText() then
          local clipboard = ffi.string(sdl.getClipboardText())
-         self:__onTextInput(clipboard)
+         self:onTextInput(clipboard)
       end
    elseif key == 'C' and mod:match('g') then
       sdl.setClipboardText(self.attr.text)

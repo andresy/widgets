@@ -12,20 +12,19 @@ VBox.__init =
    function(self, parent, attr)
       Widget.__init(self,
                     parent,
-                    true,
                     {hfill=false, vfill=false, padding=10, spacing=10, align='center', autospacing=true},
                     attr)
    end
 )
 
-VBox.wishSize =
+VBox.sizeRequest =
    argcheck(
    {{name="self", type="gui.VBox"}},
    function(self)
       local w = 0
       local h = 0
       for _, widget in ipairs(self.children) do
-         local ww, wh = widget:wishSize()
+         local ww, wh = widget:sizeRequest()
          w = math.max(w, ww)
          h = h + wh
       end
@@ -35,7 +34,7 @@ VBox.wishSize =
    end
 )
 
-VBox.setGeometry =
+VBox.onSetGeometry =
    argcheck(
    {{name="self", type="gui.VBox"},
     {name="x", type="number"},
@@ -43,8 +42,7 @@ VBox.setGeometry =
     {name="w", type="number", opt=true},
     {name="h", type="number", opt=true}},
    function(self, x, y, w, h)
-      Widget.setGeometry(self, x, y, w, h)
-      local rw, rh = self:wishSize()
+      local rw, rh = self:sizeRequest()
       local spacing = self.attr.spacing
       local padding = self.attr.padding
       local lefth = math.max(0, h-rh)
@@ -67,7 +65,7 @@ VBox.setGeometry =
       w = w - 2*self.attr.padding
       h = h - 2*padding
       for _, widget in ipairs(self.children) do
-         local rw, rh = widget:wishSize()
+         local rw, rh = widget:sizeRequest()
          if rw < w and widget.attr.hfill then
             rw = w
          end
@@ -93,13 +91,12 @@ VBox.setGeometry =
    end
 )
 
-function VBox:draw()
-   Widget.draw(self)
+function VBox:onDraw()
    if self.__debug then
-      local cr = self.window.cr
+      local cr = self.window.drv.cr
       cr:setLineWidth(2)
       cr:setSourceRGBA(1, 0, 0, 0.5)
-      cr:rectangle(self.__x, self.__y, self.__w, self.__h)
+      cr:rectangle(self.x, self.y, self.w, self.h)
       cr:stroke()
    end
 end

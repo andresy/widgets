@@ -13,7 +13,6 @@ Label.__init =
    function(self, parent, label, attr)
       Widget.__init(self,
                     parent,
-                    false,
                     {hfill=false, vfill=false, label=label, padding=0, valign='center', halign='center'},
                     attr)
    end
@@ -26,29 +25,29 @@ function Label:setLabel(label)
    end
 end
 
-function Label:wishSize()
-   local cr = self.window.cr
+function Label:sizeRequest()
+   local cr = self.window.drv.cr
    cr:setFontSize(self.attr.fontsize)
    local w = cr:textExtents(self.attr.label).width + 2*self.attr.padding
    local h = cr:fontExtents().height + 2*self.attr.padding
    return w, h
 end
    
-function Label:draw()
-   local cr = self.window.cr
-   if self.__w > 0 and self.__h > 0 then
-      local w, h = self:wishSize()
-      w = math.max(self.__w, w)
-      h = math.max(self.__h, h)
+function Label:onDraw()
+   local cr = self.window.drv.cr
+   if self.w > 0 and self.h > 0 then
+      local w, h = self:sizeRequest()
+      w = math.max(self.w, w)
+      h = math.max(self.h, h)
 
       cr:save()
-      cr:translate(self.__x, self.__y)
-      cr:rectangle(0, 0, self.__w, self.__h)
+      cr:translate(self.x, self.y)
+      cr:rectangle(0, 0, self.w, self.h)
       cr:clip()
 
-      if self.__debug then
+      if self.debug then
          cr:setSourceRGBA(1, 0, 0, 0.5)
-         cr:rectangle(0, 0, self.__w, self.__h)
+         cr:rectangle(0, 0, self.w, self.h)
          cr:stroke()
       end
 

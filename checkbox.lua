@@ -13,7 +13,6 @@ Checkbox.__init =
    function(self, parent, label, attr)
       Widget.__init(self,
                     parent,
-                    false,
                     {hfill=false, vfill=false, label=label, padding=5, size=10, checked=false},
                     attr)
    end
@@ -26,38 +25,38 @@ function Checkbox:setLabel(label)
    end
 end
 
-function Checkbox:wishSize()
-   local cr = self.window.cr
+function Checkbox:sizeRequest()
+   local cr = self.window.drv.cr
    cr:setFontSize(self.attr.fontsize)
    local w = cr:textExtents(self.attr.label).width + 2*self.attr.padding + self.attr.size + cr:textExtents('X').width
    local h = math.max(self.attr.size, cr:fontExtents().height) + 2*self.attr.padding
    return w, h
 end
    
-function Checkbox:draw()
-   local cr = self.window.cr
-   if self.__w > 0 and self.__h > 0 then
-      local rw, rh = self:wishSize()
-      local w = math.max(self.__w, rw)
-      local h = math.max(self.__h, rh)
+function Checkbox:onDraw()
+   local cr = self.window.drv.cr
+   if self.w > 0 and self.h > 0 then
+      local rw, rh = self:sizeRequest()
+      local w = math.max(self.w, rw)
+      local h = math.max(self.h, rh)
       local size = self.attr.size
       local padding = self.attr.padding
 
       cr:save()
-      cr:translate(self.__x, self.__y)
-      cr:rectangle(0, 0, self.__w, self.__h)
+      cr:translate(self.x, self.y)
+      cr:rectangle(0, 0, self.w, self.h)
       cr:clip()
 
-      if self.__debug then
-         cr:rectangle(0, 0, self.__w, self.__h)
+      if self.debug then
+         cr:rectangle(0, 0, self.w, self.h)
          cr:setSourceRGBA(1, 0, 0, 0.5)
          cr:stroke()
       end
       cr:setLineWidth(1)
       cr:setSourceRGB(0.8, 0.8, 0.8)
 
-      self.__cx = w/2-rw/2+padding+self.__x
-      self.__cy = h/2-size/2+self.__y
+      self.cx = w/2-rw/2+padding+self.x
+      self.cy = h/2-size/2+self.y
 
       cr:rectangle(w/2-rw/2+padding, h/2-size/2, size, size)
       cr:stroke()
@@ -81,12 +80,13 @@ function Checkbox:draw()
    end
 end
 
-function Checkbox:__onMouseButton(x, y)
-   Widget.__onMouseButton(self, x, y)
-   if self:__isHover(x, y) then
-      if x >= self.__cx and x <= self.__cx+self.attr.size and
-         y >= self.__cy and y <= self.__cy+self.attr.size then
+function Checkbox:onMouseButton(x, y)
+   Widget.onMouseButton(self, x, y)
+   if self:isArea(x, y) then
+      if x >= self.cx and x <= self.cx+self.attr.size and
+         y >= self.cy and y <= self.cy+self.attr.size then
          self.attr.checked = not self.attr.checked
+         self:redraw()
       end
    end
 end

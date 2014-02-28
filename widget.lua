@@ -3,14 +3,18 @@ local argcheck = require 'argcheck'
 
 local Widget = class.new('gui.Widget')
 
+-- attr are inherited
+-- flags are not
+
 Widget.__init =
    argcheck(
    {{name="self", type="gui.Widget"},
     {name="parent", type="gui.Widget"}, 
-    {name="iscontainer", type="boolean"},
     {name="attr", type="table"},
     {name="attrset", type="table", opt=true}},
-   function(self, parent, iscontainer, attr, attrset)
+   function(self, parent, attr, attrset)
+      self.flags = {nochild=false, onechild=false, hidden=false, undersized=false, dirty=false}
+      self.children = {}
       self.parent = parent
       self.window = self.parent.window
       self:__initAttributes{fontsize=12}
@@ -18,23 +22,22 @@ Widget.__init =
       if attrset then
          self:setAttributes(attrset)
       end
-      if iscontainer then
-         self.children = {}
-      end
-      parent:setChild(self)
+      parent:attach(self)
    end
 )
 
-Widget.setChild =
+Widget.attach =
    argcheck(
    {{name="self", type="gui.Widget"},
     {name="child", type="gui.Widget"}},
    function(self, child)
-      if self.children then
-         table.insert(self.children, child)
-      else
-         self.child = child
+      if self.flags.nochild then
+         error('cannot attach a child to <%s>', class.type(self))
       end
+      if self.flags.onechild and #self.children > 0 then
+         error('cannot attach more than one child to <%s>', class.type(self))
+      end
+      table.insert(self.children, child)
       self:updateGeometry()
    end
 )
@@ -68,25 +71,6 @@ Widget.setAttributes =
    end
 )
 
-Widget.setGeometry =
-   argcheck(
-   {{name="self", type="gui.Widget"},
-    {name="x", type="number"},
-    {name="y", type="number"},
-    {name="w", type="number", opt=true},
-    {name="h", type="number", opt=true}},
-   function(self, x, y, w, h)
-      self.__x = x
-      self.__y = y
-      if w then
-         self.__w = w
-      end
-      if h then
-         self.__h = h
-      end
-   end
-)
-
 Widget.updateGeometry =
    argcheck(
    {{name="self", type="gui.Widget"}},
@@ -103,7 +87,7 @@ Widget.isGeometryReady =
    end
 )
 
-Widget.__isHover =
+Widget.isArea =
    argcheck(
    {{name="self", type="gui.Widget"},
     {name="x", type="number"},
@@ -112,92 +96,130 @@ Widget.__isHover =
       if not self:isGeometryReady() then
          return false
       else
-         return (x >= self.__x and x <= self.__x+self.__w and y >= self.__y and y <= self.__y+self.__h)
+         return (x >= self.x and x <= self.x+self.w and y >= self.y and y <= self.y+self.h)
       end
    end
 )
 
-Widget.__onMouseMotion =
-   argcheck(
-   {{name="self", type="gui.Widget"},
-    {name="x", type="number"},
-    {name="y", type="number"}},
-   function(self, x, y, flag)
-      if self.onMouseMotion then
-         self:onMouseMotion(x, y)
-      end
-      local children = self.children and self.children or {self.child}
-      for _, child in ipairs(children) do         
-         child:__onMouseMotion(x, y)
-      end
-   end
-)
+function Widget:onMouseMotion()
+end
 
-Widget.__onTextInput =
-   argcheck(
-   {{name="self", type="gui.Widget"},
-    {name="text", type="string"}},
-   function(self, text)
-      if self.onTextInput then
-         self:onTextInput(text)
-      end
-      local children = self.children and self.children or {self.child}
-      for _, child in ipairs(children) do         
-         child:__onTextInput(text)
-      end
-   end
-)
-
-Widget.__onKeyPressed =
-   argcheck(
-   {{name="self", type="gui.Widget"},
-    {name="name", type="string"},
-    {name="mod", type="string"}},
-   function(self, name, mod)
-      if self.onKeyPressed then
-         self:onKeyPressed(name, mod)
-      end
-      local children = self.children and self.children or {self.child}
-      for _, child in ipairs(children) do         
-         child:__onKeyPressed(name, mod)
-      end
-   end
-)
-
-Widget.__onMouseButton =
+Widget.mouseMotion =
    argcheck(
    {{name="self", type="gui.Widget"},
     {name="x", type="number"},
     {name="y", type="number"}},
    function(self, x, y)
-      if not self:isGeometryReady() then
-         return
-      end
-      if x >= self.__x and x <= self.__x+self.__w and y >= self.__y and y <= self.__y+self.__h then
-         if self.onMouseButton then
-            self:onMouseButton(x, y)
-         end
-         if self.child then
-            self.child:__onMouseButton(x, y)
-         end
-         if self.children then
-            for _, child in ipairs(self.children) do
-               child:__onMouseButton(x, y)
-            end
-         end
+      self:onMouseMotion(x, y)
+      for _, child in ipairs(self.children) do
+         child:mouseMotion(x, y)
       end
    end
 )
 
-Widget.draw =
+function Widget:onTextInput()
+end
+
+Widget.textInput =
    argcheck(
-   {{name="self", type="gui.Widget"}},
-   function(self)
-      local children = self.children or {self.child}
-      for _, child in ipairs(children) do
-         child:draw()
+   {{name="self", type="gui.Widget"},
+    {name="text", type="string"}},
+   function(self, text)
+      self:onTextInput(text)
+      for _, child in ipairs(self.children) do
+         child:textInput(text)
       end
    end
 )
 
+function Widget:onKeyPressed()
+end
 
+Widget.keyPressed =
+   argcheck(
+   {{name="self", type="gui.Widget"},
+    {name="name", type="string"},
+    {name="mod", type="string"}},
+   function(self, name, mod)
+      self:onKeyPressed(name, mod)
+      for _, child in ipairs(self.children) do
+         child:keyPressed(name, mod)
+      end
+   end
+)
+
+function Widget:onMouseButton()
+end
+
+Widget.mouseButton =
+   argcheck(
+   {{name="self", type="gui.Widget"},
+    {name="x", type="number"},
+    {name="y", type="number"}},
+   function(self, x, y)
+      self:onMouseButton(x, y)
+      for _, child in ipairs(self.children) do
+         child:mouseButton(x, y)
+      end
+   end
+)
+
+function Widget:onDraw()
+end
+
+function Widget:draw(force)
+  if self.flags.hidden or self.flags.undersized then
+     return
+  end
+
+   if force or self.flags.dirty then
+      print('drawing', class.type(self))
+      self:onDraw()
+   end
+
+   for _, child in ipairs(self.children) do
+      child:draw(force or self.flags.dirty)
+   end
+
+   self.flags.dirty = false
+end
+
+-- must set its child
+function Widget:onSetGeometry()
+end
+
+function Widget:setGeometry(x, y, w, h)
+   if w <= 0 or h <= 0 then
+      w = 0
+      h = 0
+      self.flags.undersized = true
+   else
+      self.flags.undersized = false
+   end
+
+   if x ~= self.x or y ~= self.y or w ~= self.w or h ~= self.h then
+      self:redraw()
+   end
+
+   self.x = x
+   self.y = y
+   self.w = w
+   self.h = h
+
+   self:onSetGeometry(x, y, w, h)
+end
+
+
+function Widget:redraw()
+--   self.window:redraw()
+   self.flags.dirty = true
+end
+
+function Widget:show()
+   self.flags.hidden = false
+   self:redraw()
+end
+
+function Widget:hide()
+   self.flags.hidden = true
+end
