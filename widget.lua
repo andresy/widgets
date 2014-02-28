@@ -189,6 +189,11 @@ function Widget:onSetGeometry()
 end
 
 function Widget:setGeometry(x, y, w, h)
+   x = math.floor(x)
+   y = math.floor(y)
+   w = math.floor(w)
+   h = math.floor(h)
+
    if w <= 0 or h <= 0 then
       w = 0
       h = 0
