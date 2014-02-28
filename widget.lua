@@ -167,18 +167,22 @@ Widget.mouseButton =
 function Widget:onDraw()
 end
 
-function Widget:draw(force)
+function Widget:draw(rects, dirtyparent)
   if self.flags.hidden or self.flags.undersized then
      return
   end
 
-   if force or self.flags.dirty then
+   if dirtyparent or self.flags.dirty then
       print('drawing', class.type(self))
       self:onDraw()
+
+      if not dirtyparent then
+         table.insert(rects, {self.x, self.y, self.w, self.h})
+      end
    end
 
    for _, child in ipairs(self.children) do
-      child:draw(force or self.flags.dirty)
+      child:draw(rects, dirtyparent or self.flags.dirty)
    end
 
    self.flags.dirty = false
