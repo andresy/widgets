@@ -4,19 +4,19 @@ local argcheck = require 'argcheck'
 
 local Frame, Widget = class.new('gui.Frame', 'gui.Widget')
 
-Frame.__init =
-   argcheck(
-   {{name="self", type="gui.Frame"},
-    {name="parent", type="gui.Widget"},
-    {name="label", type="string", opt=true},
-    {name="attr", type="table", opt=true}},
-   function(self, parent, label, attr)
-      Widget.__init(self,
-                    parent,
-                    {hfill=false, vfill=false, label="Une Grosse Boite", padding=10, halign='center', valign='center'},
-                    attr)
-   end
-)
+Frame.__init = argcheck{
+   {name="self", type="gui.Frame"},
+   {name="parent", type="gui.Widget"},
+   {name="label", type="string", opt=true},
+   {name="attr", type="table", opt=true},
+   call =
+      function(self, parent, label, attr)
+         Widget.__init(self,
+                       parent,
+                       {hfill=false, vfill=false, label="Une Grosse Boite", padding=10, halign='center', valign='center'},
+                       attr)
+      end
+}
 
 function Frame:setLabel(label)
    if label ~= self.attr.label then
@@ -36,55 +36,55 @@ function Frame:sizeRequest()
    return w, h
 end
 
-Frame.onSetGeometry =
-   argcheck(
-   {{name="self", type="gui.Frame"},
-    {name="x", type="number"},
-    {name="y", type="number"},
-    {name="w", type="number", opt=true},
-    {name="h", type="number", opt=true}},
-   function(self, x, y, w, h)
-      if self.children[1] then
-         local padding = self.attr.padding
-         local rw, rh = self:sizeRequest()
-         local wleft = math.max(0, w-rw)
-         local hleft = math.max(0, h-rh)
-         rw, rh = self.children[1]:sizeRequest()
-         
-         if wleft > 0 and self.children[1].attr.hfill then
-            rw = rw+wleft
-            wleft = 0
-         end
-         
-         if hleft > 0 and self.children[1].attr.hfill then
-            rh = rh+hleft
-            hleft = 0
-         end
+Frame.onSetGeometry = argcheck{
+   {name="self", type="gui.Frame"},
+   {name="x", type="number"},
+   {name="y", type="number"},
+   {name="w", type="number", opt=true},
+   {name="h", type="number", opt=true},
+   call =
+      function(self, x, y, w, h)
+         if self.children[1] then
+            local padding = self.attr.padding
+            local rw, rh = self:sizeRequest()
+            local wleft = math.max(0, w-rw)
+            local hleft = math.max(0, h-rh)
+            rw, rh = self.children[1]:sizeRequest()
+            
+            if wleft > 0 and self.children[1].attr.hfill then
+               rw = rw+wleft
+               wleft = 0
+            end
+            
+            if hleft > 0 and self.children[1].attr.hfill then
+               rh = rh+hleft
+               hleft = 0
+            end
 
-         local rx = x + self.attr.padding*2
-         local ry = y + self.attr.padding*2
-         if self.attr.halign == 'center' then
-            rx = rx + wleft/2
-         elseif self.attr.halign == 'left' then
-         elseif  self.attr.halign == 'right' then
-            rx = rx + wleft
-         else
-            error(string.format('%s: invalid align attribute value <%s> (valid are: center, right, left)', class.type(self), self.attr.align))
-         end
+            local rx = x + self.attr.padding*2
+            local ry = y + self.attr.padding*2
+            if self.attr.halign == 'center' then
+               rx = rx + wleft/2
+            elseif self.attr.halign == 'left' then
+            elseif  self.attr.halign == 'right' then
+               rx = rx + wleft
+            else
+               error(string.format('%s: invalid align attribute value <%s> (valid are: center, right, left)', class.type(self), self.attr.align))
+            end
 
-         if self.attr.valign == 'center' then
-            ry = ry + hleft/2
-         elseif self.attr.valign == 'top' then
-         elseif  self.attr.valign == 'bottom' then
-            ry = ry + hleft
-         else
-            error(string.format('%s: invalid align attribute value <%s> (valid are: center, top, bottom)', class.type(self), self.attr.align))
-         end
+            if self.attr.valign == 'center' then
+               ry = ry + hleft/2
+            elseif self.attr.valign == 'top' then
+            elseif  self.attr.valign == 'bottom' then
+               ry = ry + hleft
+            else
+               error(string.format('%s: invalid align attribute value <%s> (valid are: center, top, bottom)', class.type(self), self.attr.align))
+            end
 
-         self.children[1]:setGeometry(rx, ry, rw, rh)
+            self.children[1]:setGeometry(rx, ry, rw, rh)
+         end
       end
-   end
-)
+}
 
 function Frame:onDraw()
    local cr = self.window.drv.cr

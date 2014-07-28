@@ -7,22 +7,22 @@ local ffi = require 'ffi'
 
 local LineEdit, Widget = class.new('gui.LineEdit', 'gui.Widget')
 
-LineEdit.__init =
-   argcheck(
-   {{name="self", type="gui.LineEdit"},
-    {name="parent", type="gui.Widget"},
-    {name="text", type="string"},
-    {name="attr", type="table", opt=true}},
-   function(self, parent, text, attr)
-      Widget.__init(self,
-                    parent,
-                    {hfill=false, vfill=false, text=text, padding=10, textpadding=5, size=20},
-                    attr)
-
-      self.__idx = utf8.len(self.attr.text)
-      self.__shift = 0
-   end
-)
+LineEdit.__init = argcheck{
+   {name="self", type="gui.LineEdit"},
+   {name="parent", type="gui.Widget"},
+   {name="text", type="string"},
+   {name="attr", type="table", opt=true},
+   call =
+      function(self, parent, text, attr)
+         Widget.__init(self,
+                       parent,
+                       {hfill=false, vfill=false, text=text, padding=10, textpadding=5, size=20},
+                       attr)
+         
+         self.__idx = utf8.len(self.attr.text)
+         self.__shift = 0
+      end
+}
 
 function LineEdit:setText(text)
    if text ~= self.attr.text then

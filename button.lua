@@ -4,21 +4,21 @@ local argcheck = require 'argcheck'
 
 local Button, Widget = class.new('gui.Button', 'gui.Widget')
 
-Button.__init =
-   argcheck(
-   {{name="self", type="gui.Button"},
-    {name="parent", type="gui.Widget"},
-    {name="label", type="string"},
-    {name="attr", type="table", opt=true}},
-   function(self, parent, label, attr)
-      Widget.__init(self,
-                    parent,
-                    {hfill=false, vfill=false, label=label, padding=10},
-                    attr)
-      self.flags.hover = false
-      self.flags.pressed = false
-   end
-)
+Button.__init = argcheck{
+   {name="self", type="gui.Button"},
+   {name="parent", type="gui.Widget"},
+   {name="label", type="string"},
+   {name="attr", type="table", opt=true},
+   call =
+      function(self, parent, label, attr)
+         Widget.__init(self,
+                       parent,
+                       {hfill=false, vfill=false, label=label, padding=10},
+                       attr)
+         self.flags.hover = false
+         self.flags.pressed = false
+      end
+}
 
 function Button:setLabel(label)
    if label ~= self.attr.label then
@@ -57,6 +57,7 @@ function Button:onDraw()
          pat:addColorStopRGB(0, 0.7, 0.7, 0.7)
       end
       cr:rectangle(0, 0, w, h)
+
       cr:setSource(pat)
       --   cr:setSourceRGB(0.8, 0.8, 0.8)
       cr:fill()

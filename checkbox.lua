@@ -4,19 +4,19 @@ local argcheck = require 'argcheck'
 
 local Checkbox, Widget = class.new('gui.Checkbox', 'gui.Widget')
 
-Checkbox.__init =
-   argcheck(
-   {{name="self", type="gui.Checkbox"},
-    {name="parent", type="gui.Widget"},
-    {name="label", type="string"},
-    {name="attr", type="table", opt=true}},
-   function(self, parent, label, attr)
-      Widget.__init(self,
-                    parent,
-                    {hfill=false, vfill=false, label=label, padding=5, size=10, checked=false},
-                    attr)
-   end
-)
+Checkbox.__init = argcheck{
+   {name="self", type="gui.Checkbox"},
+   {name="parent", type="gui.Widget"},
+   {name="label", type="string"},
+   {name="attr", type="table", opt=true},
+   call =
+      function(self, parent, label, attr)
+         Widget.__init(self,
+                       parent,
+                       {hfill=false, vfill=false, label=label, padding=5, size=10, checked=false},
+                       attr)
+      end
+}
 
 function Checkbox:setLabel(label)
    if label ~= self.attr.label then

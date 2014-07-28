@@ -4,19 +4,19 @@ local argcheck = require 'argcheck'
 
 local Label, Widget = class.new('gui.Label', 'gui.Widget')
 
-Label.__init =
-   argcheck(
-   {{name="self", type="gui.Label"},
-    {name="parent", type="gui.Widget"},
-    {name="label", type="string"},
-    {name="attr", type="table", opt=true}},
-   function(self, parent, label, attr)
-      Widget.__init(self,
-                    parent,
-                    {hfill=false, vfill=false, label=label, padding=0, valign='center', halign='center'},
-                    attr)
-   end
-)
+Label.__init = argcheck{
+   {name="self", type="gui.Label"},
+   {name="parent", type="gui.Widget"},
+   {name="label", type="string"},
+   {name="attr", type="table", opt=true},
+   call =
+      function(self, parent, label, attr)
+         Widget.__init(self,
+                       parent,
+                       {hfill=false, vfill=false, label=label, padding=0, valign='center', halign='center'},
+                       attr)
+      end
+}
 
 function Label:setLabel(label)
    if label ~= self.attr.label then

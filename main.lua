@@ -13,14 +13,16 @@ local Label = require 'label'
 local Checkbox = require 'checkbox'
 local LineEdit = require 'lineedit'
 
-local W = 250
-local H = 250
+local W = 1680
+local H = 1050
+
+W,H = 800, 600
 
 sdl.init(sdl.INIT_VIDEO)
 
 local event = ffi.new('SDL_Event')
 
-local window = Window.new("salut", {resizable=true})--, {width=800, height=600})
+local window = Window.new("salut", {width=W,height=H})--, fullscreen=true})--,resizable=true})--, {width=800, height=600})
 local vertical = VBox.new(window)
 
 local frame = Frame.new(vertical, {hfill=true})
@@ -32,18 +34,15 @@ for i=1,5 do
       print('CLICKED pouic' .. i)
    end
 end
+   print(class.type(h1), k,v)
+for k,v in pairs(h1) do
+   print(class.type(h1), k,v)
+end
 h1.children[3].onButtonPressed = function(self)
                                   self:setLabel('CLICKED')
 --                                  Button.new(h1, 'pouic')
                                end
 
-h1.children[3].onButtonHovered = function(self)
-                                    self:setLabel('HOVERED')
-                                 end
-
-h1.children[3].onButtonUnHovered = function(self)
-                                     self:setLabel('YOU LEFT, BASTERD')
-                                  end
 
 local h2 = HBox.new(vertical, {hfill=true, vfill=true}) -- faudrait pas tout mettre comme ca?
 Label.new(h2, 'Choose your destiny:')
@@ -56,6 +55,20 @@ h2.children[3].onButtonPressed = function()
                                   idx = idx + 1
                                   Button.new(h2, 'pouix' .. idx)
                                end
+
+h2.children[2]:setLabel('Quit')
+h2.children[2].onButtonPressed = function()
+                                    print('quit')
+                                    os.exit()
+                                 end
+
+h1.children[3].onButtonHovered = function(self)
+                                    h2.children[3]:setLabel('HOVERED')
+                                 end
+
+h1.children[3].onButtonUnHovered = function(self)
+                                      h2.children[3]:setLabel('YOU LEFT, BASTERD')
+                                  end
 
 local vc = VBox.new(h2, {align='left', spacing=0})
 Checkbox.new(vc, 'YOU check me if you dare')
@@ -72,11 +85,38 @@ end
 
 local txt = "th> "
 sdl.startTextInput()
+local nevent = 0
 while true do
 
-   window:draw()
+   local rects = {}
+   window:draw(rects)
+
+--   print(#rects)
+   local nrects = #rects
+   if nrects > 0 then
+      local rects_p = ffi.new('SDL_Rect[?]', nrects, rects)
+--       for i=1,#rects do
+--          rects_p[i-1].x = rects[i].x
+--          rects_p[i-1].y = rects[i].y
+--          rects_p[i-1].w = rects[i].w
+--          rects_p[i-1].h = rects[i].h
+--       end
+--      sdl.updateWindowSurface(window.drv.window)
+      sdl.updateWindowSurfaceRects(window.drv.window, rects_p, nrects)
+
+--       print(rects)
+--       if #rects > 1 then -- DEBUG
+--          for i=0,#rects-1 do
+--             print(rects_p[i].x, rects_p[i].y, rects_p[i].w, rects_p[i].h)
+--          end
+--          os.exit()
+--       end
+   end
 
    sdl.waitEvent(event)
+   nevent = nevent + 1
+   print(string.format('event number %s', nevent))
+
    if event.type == sdl.QUIT then
       break
    elseif event.type == sdl.TEXTINPUT then
@@ -136,7 +176,5 @@ while true do
          window:setGeometry(-1, -1, W, H)
       end
    end
-
-   sdl.updateWindowSurface(window.drv.window)
 
 end
